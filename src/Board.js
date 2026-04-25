@@ -14,37 +14,31 @@ export default class Board extends React.Component {
     }
   }
 
-  handleSort = (lane, mode) => {
-    const updatedClients = { ...this.props.clients };
-    updatedClients[lane] = this.sortClients(updatedClients[lane], mode);
-    this.props.onUpdateClients(updatedClients);
-  }
-
-  sortClients = (clients, mode) => {
+  // Pure function for sorting logic
+  static sortClients(clients, mode) {
     const sorted = [...clients];
     switch (mode) {
-      case 'AZ':
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
-      case 'ZA':
-        return sorted.sort((a, b) => b.name.localeCompare(a.name));
-      case 'High':
-        return sorted.sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name));
-      case 'Low':
-        return sorted.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
-      default:
-        return sorted;
+      case 'AZ': return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'ZA': return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case 'High': return sorted.sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name));
+      case 'Low': return sorted.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
+      default: return sorted;
     }
+  }
+
+  handleSort = (lane, mode) => {
+    const updatedClients = { ...this.props.clients };
+    updatedClients[lane] = Board.sortClients(updatedClients[lane], mode);
+    this.props.onUpdateClients(updatedClients);
   }
 
   updatePriority = (clientID, newPriority) => {
     const updatedClients = { ...this.props.clients };
-    
     ['backlog', 'inProgress', 'complete'].forEach(lane => {
       updatedClients[lane] = updatedClients[lane].map(c => 
         c.id === clientID ? { ...c, priority: newPriority } : c
       );
     });
-
     this.props.onUpdateClients(updatedClients);
   }
 
@@ -60,22 +54,17 @@ export default class Board extends React.Component {
 
       const clientID = el.dataset.id;
       const targetLaneTitle = target.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase();
-      
-      let newStatus = 'backlog';
-      let targetKey = 'backlog';
-      if (targetLaneTitle.includes('in progress')) { newStatus = 'in-progress'; targetKey = 'inProgress'; }
-      else if (targetLaneTitle.includes('complete')) { newStatus = 'complete'; targetKey = 'complete'; }
-
+      const targetKey = targetLaneTitle.includes('in progress') ? 'inProgress' : targetLaneTitle.includes('complete') ? 'complete' : 'backlog';
       const sourceKey = source.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase().includes('in progress') ? 'inProgress' : 
                         source.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase().includes('complete') ? 'complete' : 'backlog';
       
       const sourceClients = [...this.props.clients[sourceKey]];
       const clientIndex = sourceClients.findIndex(c => c.id === clientID);
       const [movedClient] = sourceClients.splice(clientIndex, 1);
-      movedClient.status = newStatus;
+      
+      movedClient.status = targetKey === 'inProgress' ? 'in-progress' : targetKey;
 
       const targetClients = sourceKey === targetKey ? sourceClients : [...this.props.clients[targetKey]];
-      
       let insertIndex = targetClients.length;
       if (sibling) {
         insertIndex = targetClients.findIndex(c => c.id === sibling.dataset.id);
@@ -94,35 +83,28 @@ export default class Board extends React.Component {
     if (this.drake) this.drake.destroy();
   }
 
-  renderSwimlane(name, clients, ref, laneKey) {
-    return (
-      <Swimlane 
-        name={name} 
-        clients={clients} 
-        dragulaRef={ref}
-        onPriorityChange={this.updatePriority}
-        onSort={(mode) => this.handleSort(laneKey, mode)}
-      />
-    );
-  }
-
   render() {
     const { clients } = this.props;
+    const lanes = [
+      { name: 'Backlog', key: 'backlog' },
+      { name: 'In Progress', key: 'inProgress' },
+      { name: 'Complete', key: 'complete' }
+    ];
 
     return (
-      <div className="Board">
-        <div className="container-fluid">
-          <div className="row">
-            <div className="col-md-4">
-              {this.renderSwimlane('Backlog', clients.backlog, this.swimlanes.backlog, 'backlog')}
+      <div className="Board container-fluid">
+        <div className="row">
+          {lanes.map(lane => (
+            <div className="col-md-4" key={lane.key}>
+              <Swimlane 
+                name={lane.name} 
+                clients={clients[lane.key]} 
+                dragulaRef={this.swimlanes[lane.key]}
+                onPriorityChange={this.updatePriority}
+                onSort={(mode) => this.handleSort(lane.key, mode)}
+              />
             </div>
-            <div className="col-md-4">
-              {this.renderSwimlane('In Progress', clients.inProgress, this.swimlanes.inProgress, 'inProgress')}
-            </div>
-            <div className="col-md-4">
-              {this.renderSwimlane('Complete', clients.complete, this.swimlanes.complete, 'complete')}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     );
