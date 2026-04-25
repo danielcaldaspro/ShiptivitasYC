@@ -2,9 +2,10 @@
   background-color: #ebedf0;
   border-radius: 10px;
   padding: 12px;
-  min-height: 80vh;
+  max-height: calc(100vh - 150px); /* Ajusta para caber na tela */
   display: flex;
   flex-direction: column;
+  margin-bottom: 20px;
 }
 
 .Swimlane-title {
@@ -14,17 +15,37 @@
   color: #495057;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0; /* Impede o título de encolher */
 }
 
 .Swimlane-dragColumn {
   flex-grow: 1;
+  overflow-y: auto;
   min-height: 100px;
   border-radius: 6px;
-  transition: background-color 0.2s;
+  padding-right: 5px;
+  
+  /* Esconder Scrollbar - Chrome, Safari e Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Esconder Scrollbar - Firefox */
+  scrollbar-width: none;
+  
+  /* Esconder Scrollbar - IE e Edge */
+  -ms-overflow-style: none;
 }
 
 .Swimlane-dragColumn:empty {
   border: 2px dashed #adb5bd;
   background-color: rgba(0,0,0,0.02);
+}
+
+/* Ajustes para Mobile */
+@media (max-width: 768px) {
+  .Swimlane-column {
+    max-height: 500px; /* Altura fixa menor no mobile para não ocupar tudo */
+  }
 }
