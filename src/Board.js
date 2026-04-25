@@ -10,7 +10,7 @@ export default class Board extends React.Component {
     const clients = this.getClients();
     this.state = {
       clients: {
-        backlog: clients.map(client => ({ ...client, status: 'backlog' })),
+        backlog: clients.map(client => ({ ...client, status: 'backlog', priority: 1 })),
         inProgress: [],
         complete: [],
       }
@@ -20,6 +20,19 @@ export default class Board extends React.Component {
       inProgress: React.createRef(),
       complete: React.createRef(),
     }
+  }
+
+  updatePriority = (clientID, newPriority) => {
+    const { clients } = this.state;
+    const updatedClients = { ...clients };
+    
+    ['backlog', 'inProgress', 'complete'].forEach(lane => {
+      updatedClients[lane] = updatedClients[lane].map(c => 
+        c.id === clientID ? { ...c, priority: newPriority } : c
+      ).sort((a, b) => b.priority - a.priority);
+    });
+
+    this.setState({ clients: updatedClients });
   }
 
   componentDidMount() {
@@ -69,6 +82,11 @@ export default class Board extends React.Component {
       const laneKey = newStatus === 'in-progress' ? 'inProgress' : newStatus;
       updatedClients[laneKey].splice(targetIndex, 0, client);
 
+      // Re-sort all lanes by priority to ensure auto-sorting
+      ['backlog', 'inProgress', 'complete'].forEach(lane => {
+        updatedClients[lane].sort((a, b) => b.priority - a.priority);
+      });
+
       this.setState({
         clients: updatedClients
       });
@@ -109,7 +127,12 @@ export default class Board extends React.Component {
   }
   renderSwimlane(name, clients, ref) {
     return (
-      <Swimlane name={name} clients={clients} dragulaRef={ref}/>
+      <Swimlane 
+        name={name} 
+        clients={clients} 
+        dragulaRef={ref}
+        onPriorityChange={this.updatePriority}
+      />
     );
   }
 

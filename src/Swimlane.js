@@ -12,6 +12,8 @@ export default class Swimlane extends React.Component {
           name={client.name}
           description={client.description}
           status={client.status}
+          priority={client.priority}
+          onPriorityChange={this.props.onPriorityChange}
         />
       );
     })
