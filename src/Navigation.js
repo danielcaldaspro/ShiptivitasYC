@@ -1,33 +1,18 @@
 import React from 'react';
-import './Navigation.css';
 
 export default class Navigation extends React.Component {
   render() {
     return (
-      <nav className="Navbar">
-        <div className="Navbar-brand">Shiptivitas</div>
-        <div className="Navbar-links">
-          <button 
-            className={"Nav-button " + (this.props.selectedTab === 'home' ? 'active': '')} 
-            onClick={() => this.props.onClick("home")}
-          >
-            Home
-          </button>
-          <button 
-            className={"Nav-button " + (this.props.selectedTab === 'shipping-requests' ? 'active': '')} 
-            onClick={() => this.props.onClick("shipping-requests")}
-          >
-            Shipping Requests
-          </button>
-        </div>
-        <div className="Navbar-progress">
-          <div className="Progress-label">Global Progress</div>
-          <div className="Progress-value">{this.props.progress}%</div>
-          <div className="Progress-track">
-            <div className="Progress-fill" style={{ width: `${this.props.progress}%` }}></div>
-          </div>
-        </div>
-      </nav>
+      <ul className="nav nav-tabs" id="myTab" role="tablist">
+        <li className="nav-item">
+          <a className={"nav-link " + (this.props.selectedTab === 'home' ? 'active' : '')} onClick={() => this.props.onClick("home")}
+            id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home" aria-selected={this.props.selectedTab === 'home'}>Home</a>
+        </li>
+        <li className="nav-item">
+          <a className={"nav-link " + (this.props.selectedTab === 'shipping-requests' ? 'active' : '')} onClick={() => this.props.onClick("shipping-requests")}
+            id="shipping-requests-tab" data-toggle="tab" href="#shipping-requests" role="tab" aria-controls="shipping-requests" aria-selected={this.props.selectedTab === 'shipping-requests'}>Shipping Requests</a>
+        </li>
+      </ul>
     );
   }
 }
