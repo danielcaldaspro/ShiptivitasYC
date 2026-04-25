@@ -154,9 +154,24 @@ export default class Board extends React.Component {
   }
 
   render() {
+    const { clients } = this.state;
+    const total = clients.backlog.length + clients.inProgress.length + clients.complete.length;
+    const completed = clients.complete.length;
+    const progressPercent = total > 0 ? (completed / total) * 100 : 0;
+
     return (
       <div className="Board">
         <div className="container-fluid">
+          {/* Contador de Progresso */}
+          <div className="Board-progress-container">
+            <div className="Board-progress-text">
+              <span>{completed}</span> of <span>{total}</span> shipping requests completed
+            </div>
+            <div className="Board-progress-bar-bg">
+              <div className="Board-progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
+            </div>
+          </div>
+
           <div className="row">
             <div className="col-md-4">
               {this.renderSwimlane('Backlog', this.state.clients.backlog, this.swimlanes.backlog, 'backlog')}
