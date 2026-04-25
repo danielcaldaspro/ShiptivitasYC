@@ -29,33 +29,12 @@
   justify-content: center;
 }
 
-.Count-label {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
 .Count-value {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: #ff6600;
-  margin: 2px 0;
-}
-
-.Progress-bar-container {
-  width: 120px;
-  height: 4px;
-  background: rgba(0,0,0,0.05);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.Progress-bar-fill {
-  height: 100%;
-  background: #ff6600;
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 0;
+  letter-spacing: 1px;
 }
 
 .Navbar-links {
