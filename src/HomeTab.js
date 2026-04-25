@@ -4,11 +4,11 @@ export default function HomeTab() {
   return (
     <header className="App-header">
       <div className="App-title">
-        <p style={{ fontSize: '1.5rem', color: '#6c757d', marginBottom: '2rem', fontWeight: '500', fontStyle: 'italic' }}>
-          The future of freight shipping logistics.
-        </p>
+        <h1>
+          SHIPTIVITAS
+        </h1>
         <div className="App-icon">
-          {/* A bolinha agora flutua pelo site todo como um satélite magnético! */}
+          <div className="Circle"></div>
         </div>
       </div>
     </header>
