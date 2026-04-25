@@ -10,9 +10,9 @@ export default class Board extends React.Component {
     const clients = this.getClients();
     this.state = {
       clients: {
-        backlog: clients.filter(client => !client.status || client.status === 'backlog'),
-        inProgress: clients.filter(client => client.status && client.status === 'in-progress'),
-        complete: clients.filter(client => client.status && client.status === 'complete'),
+        backlog: clients.map(client => ({ ...client, status: 'backlog' })),
+        inProgress: [],
+        complete: [],
       }
     }
     this.swimlanes = {
@@ -20,6 +20,63 @@ export default class Board extends React.Component {
       inProgress: React.createRef(),
       complete: React.createRef(),
     }
+  }
+
+  componentDidMount() {
+    this.drake = Dragula([
+      this.swimlanes.backlog.current,
+      this.swimlanes.inProgress.current,
+      this.swimlanes.complete.current,
+    ]);
+
+    this.drake.on('drop', (el, target, source, sibling) => {
+      this.drake.cancel(true); // Let React handle the DOM update
+
+      const clientID = el.dataset.id;
+      const targetLane = target.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase();
+      let newStatus = 'backlog';
+      if (targetLane === 'in progress') newStatus = 'in-progress';
+      else if (targetLane === 'complete') newStatus = 'complete';
+
+      // Find the client and move it
+      const allClients = [
+        ...this.state.clients.backlog,
+        ...this.state.clients.inProgress,
+        ...this.state.clients.complete,
+      ];
+
+      const clientIndex = allClients.findIndex(c => c.id === clientID);
+      const client = { ...allClients[clientIndex], status: newStatus };
+      allClients.splice(clientIndex, 1);
+
+      // Determine the new index in the target lane
+      // Find the sibling's index if it exists
+      const targetClients = allClients.filter(c => c.status === newStatus);
+      let targetIndex = targetClients.length;
+      if (sibling) {
+        const siblingID = sibling.dataset.id;
+        targetIndex = targetClients.findIndex(c => c.id === siblingID);
+      }
+
+      // Update state
+      const updatedClients = {
+        backlog: allClients.filter(c => c.status === 'backlog'),
+        inProgress: allClients.filter(c => c.status === 'in-progress'),
+        complete: allClients.filter(c => c.status === 'complete'),
+      };
+
+      // Add the moved client to the target lane at the correct index
+      const laneKey = newStatus === 'in-progress' ? 'inProgress' : newStatus;
+      updatedClients[laneKey].splice(targetIndex, 0, client);
+
+      this.setState({
+        clients: updatedClients
+      });
+    });
+  }
+
+  componentWillUnmount() {
+    this.drake.destroy();
   }
   getClients() {
     return [
