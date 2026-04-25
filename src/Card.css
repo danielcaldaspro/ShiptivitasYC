@@ -6,8 +6,11 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: grab;
-  border-left: 5px solid transparent;
 }
+
+.Card-grey { background-color: #adb5bd; color: white; }
+.Card-blue { background-color: #007bff; color: white; }
+.Card-green { background-color: #28a745; color: white; }
 
 .Card:hover {
   transform: translateY(-2px);
