@@ -10,9 +10,18 @@ export default class Board extends React.Component {
     const clients = this.getClients();
     this.state = {
       clients: {
-        backlog: clients.map(client => ({ ...client, status: 'backlog', priority: 1 })),
+        backlog: clients.map(client => ({ 
+          ...client, 
+          status: 'backlog', 
+          priority: Math.floor(Math.random() * 5) + 1 // Prioridade Aleatória
+        })).sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name)),
         inProgress: [],
         complete: [],
+      },
+      sortModes: {
+        backlog: 'priority',
+        inProgress: 'priority',
+        complete: 'priority'
       }
     }
     this.swimlanes = {
@@ -22,16 +31,32 @@ export default class Board extends React.Component {
     }
   }
 
+  toggleSortMode = (lane) => {
+    const newMode = this.state.sortModes[lane] === 'priority' ? 'alphabetical' : 'priority';
+    this.setState(prevState => {
+      const updatedSortModes = { ...prevState.sortModes, [lane]: newMode };
+      const updatedClients = { ...prevState.clients };
+      updatedClients[lane] = this.sortClients(updatedClients[lane], newMode);
+      return { sortModes: updatedSortModes, clients: updatedClients };
+    });
+  }
+
+  sortClients = (clients, mode) => {
+    if (mode === 'priority') {
+      return [...clients].sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name));
+    }
+    return [...clients].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   updatePriority = (clientID, newPriority) => {
-    const { clients } = this.state;
+    const { clients, sortModes } = this.state;
     const updatedClients = { ...clients };
     
-    // Atualiza a prioridade do cliente em qualquer lane que ele esteja
-    const laneKeys = ['backlog', 'inProgress', 'complete'];
-    laneKeys.forEach(lane => {
-      updatedClients[lane] = updatedClients[lane]
-        .map(c => c.id === clientID ? { ...c, priority: newPriority } : c)
-        .sort((a, b) => b.priority - a.priority);
+    ['backlog', 'inProgress', 'complete'].forEach(lane => {
+      updatedClients[lane] = updatedClients[lane].map(c => 
+        c.id === clientID ? { ...c, priority: newPriority } : c
+      );
+      updatedClients[lane] = this.sortClients(updatedClients[lane], sortModes[lane]);
     });
 
     this.setState({ clients: updatedClients });
@@ -45,44 +70,41 @@ export default class Board extends React.Component {
     ]);
 
     this.drake.on('drop', (el, target, source, sibling) => {
-      this.drake.cancel(true); // Deixa o React lidar com a atualização do DOM
+      this.drake.cancel(true);
 
       const clientID = el.dataset.id;
       const targetLaneTitle = target.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase();
       
       let newStatus = 'backlog';
-      if (targetLaneTitle === 'in progress') newStatus = 'in-progress';
-      else if (targetLaneTitle === 'complete') newStatus = 'complete';
+      let laneKey = 'backlog';
+      if (targetLaneTitle.includes('in progress')) { newStatus = 'in-progress'; laneKey = 'inProgress'; }
+      else if (targetLaneTitle.includes('complete')) { newStatus = 'complete'; laneKey = 'complete'; }
 
-      // Coleta todos os clientes atuais
       const allClients = [
         ...this.state.clients.backlog,
         ...this.state.clients.inProgress,
         ...this.state.clients.complete,
       ];
 
-      // Encontra o cliente movido e atualiza seu status
       const clientIndex = allClients.findIndex(c => c.id === clientID);
       const movedClient = { ...allClients[clientIndex], status: newStatus };
       allClients.splice(clientIndex, 1);
-      allClients.push(movedClient); // Adiciona temporariamente para re-filtrar
+      allClients.push(movedClient);
 
-      // Filtra os clientes por lane e ORDENA por prioridade imediatamente
       const updatedClients = {
-        backlog: allClients.filter(c => c.status === 'backlog').sort((a, b) => b.priority - a.priority),
-        inProgress: allClients.filter(c => c.status === 'in-progress').sort((a, b) => b.priority - a.priority),
-        complete: allClients.filter(c => c.status === 'complete').sort((a, b) => b.priority - a.priority),
+        backlog: this.sortClients(allClients.filter(c => c.status === 'backlog'), this.state.sortModes.backlog),
+        inProgress: this.sortClients(allClients.filter(c => c.status === 'in-progress'), this.state.sortModes.inProgress),
+        complete: this.sortClients(allClients.filter(c => c.status === 'complete'), this.state.sortModes.complete),
       };
 
-      this.setState({
-        clients: updatedClients
-      });
+      this.setState({ clients: updatedClients });
     });
   }
 
   componentWillUnmount() {
-    this.drake.destroy();
+    if (this.drake) this.drake.destroy();
   }
+
   getClients() {
     return [
       ['1','Stark, White and Abbott','Cloned Optimal Architecture', 'in-progress'],
@@ -112,13 +134,16 @@ export default class Board extends React.Component {
       status: companyDetails[3],
     }));
   }
-  renderSwimlane(name, clients, ref) {
+
+  renderSwimlane(name, clients, ref, laneKey) {
     return (
       <Swimlane 
         name={name} 
         clients={clients} 
         dragulaRef={ref}
         onPriorityChange={this.updatePriority}
+        sortMode={this.state.sortModes[laneKey]}
+        onToggleSort={() => this.toggleSortMode(laneKey)}
       />
     );
   }
@@ -129,13 +154,13 @@ export default class Board extends React.Component {
         <div className="container-fluid">
           <div className="row">
             <div className="col-md-4">
-              {this.renderSwimlane('Backlog', this.state.clients.backlog, this.swimlanes.backlog)}
+              {this.renderSwimlane('Backlog', this.state.clients.backlog, this.swimlanes.backlog, 'backlog')}
             </div>
             <div className="col-md-4">
-              {this.renderSwimlane('In Progress', this.state.clients.inProgress, this.swimlanes.inProgress)}
+              {this.renderSwimlane('In Progress', this.state.clients.inProgress, this.swimlanes.inProgress, 'inProgress')}
             </div>
             <div className="col-md-4">
-              {this.renderSwimlane('Complete', this.state.clients.complete, this.swimlanes.complete)}
+              {this.renderSwimlane('Complete', this.state.clients.complete, this.swimlanes.complete, 'complete')}
             </div>
           </div>
         </div>
