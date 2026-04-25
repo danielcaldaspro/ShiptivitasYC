@@ -20,6 +20,13 @@ export default class Navigation extends React.Component {
             Shipping Requests
           </button>
         </div>
+        <div className="Navbar-progress">
+          <div className="Progress-label">Global Progress</div>
+          <div className="Progress-value">{this.props.progress}%</div>
+          <div className="Progress-track">
+            <div className="Progress-fill" style={{ width: `${this.props.progress}%` }}></div>
+          </div>
+        </div>
       </nav>
     );
   }
