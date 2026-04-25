@@ -4,12 +4,9 @@ export default function HomeTab() {
   return (
     <header className="App-header">
       <div className="App-title">
-        <h1>
-          SHIPTIVITAS
-        </h1>
-        <div className="App-icon">
-          <div className="Circle"></div>
-        </div>
+        <p style={{ fontSize: '1.5rem', color: '#6c757d', marginBottom: '2rem', fontWeight: '500', fontStyle: 'italic' }}>
+          The future of freight shipping logistics.
+        </p>
       </div>
     </header>
   );
