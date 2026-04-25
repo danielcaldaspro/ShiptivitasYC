@@ -17,11 +17,11 @@ const MagneticBall = () => {
       const deltaY = e.clientY - centerY;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-      const magnetRadius = 150; // Raio de influência
-      const strength = 40; // Força do imã
+      const magnetRadius = 250; // Aumentei o raio para as camadas externas
+      const strength = -60; // Força NEGATIVA para repulsão
 
       if (distance < magnetRadius) {
-        // Calcula o deslocamento (atração)
+        // Calcula o deslocamento (repulsão: move-se na direção OPOSTA ao mouse)
         const moveX = (deltaX / distance) * strength * (1 - distance / magnetRadius);
         const moveY = (deltaY / distance) * strength * (1 - distance / magnetRadius);
         setPosition({ x: moveX, y: moveY });
@@ -38,12 +38,18 @@ const MagneticBall = () => {
     <div className="Ball-container">
       <div 
         ref={ballRef}
-        className="Magnetic-Ball"
+        className="Magnetic-Ball-System"
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
         }}
       >
-        <div className="Ball-glow"></div>
+        {/* Camadas do Campo Magnético */}
+        <div className="Magnetic-Field layer-3"></div>
+        <div className="Magnetic-Field layer-2"></div>
+        <div className="Magnetic-Field layer-1"></div>
+        
+        {/* Bolinha Principal */}
+        <div className="Magnetic-Core"></div>
       </div>
     </div>
   );
