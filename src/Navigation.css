@@ -14,7 +14,7 @@
 .Navbar-brand {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #007bff;
+  color: #ff6600;
   letter-spacing: -0.5px;
 }
 
@@ -25,7 +25,8 @@
 
 .Nav-button {
   padding: 0.6rem 1.2rem;
-  border: none;
+  border: none !important;
+  outline: none !important;
   border-radius: 6px;
   background-color: transparent;
   color: #495057;
@@ -37,11 +38,11 @@
 
 .Nav-button:hover {
   background-color: #f1f3f5;
-  color: #007bff;
+  color: #ff6600;
 }
 
 .Nav-button.active {
-  background-color: #007bff;
+  background-color: #ff6600;
   color: #ffffff;
-  box-shadow: 0 4px 6px rgba(0, 123, 255, 0.2);
+  box-shadow: 0 4px 6px rgba(255, 102, 0, 0.2);
 }

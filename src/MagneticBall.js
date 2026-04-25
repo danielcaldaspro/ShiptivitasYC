@@ -1,56 +1,73 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import './MagneticBall.css';
 
 const MagneticBall = () => {
   const ballRef = useRef(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  
+  const physics = useRef({
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+    vx: 0,
+    vy: 0,
+    mouseX: 0,
+    mouseY: 0
+  });
 
   useEffect(() => {
     const handleMouseMove = (e) => {
+      physics.current.mouseX = e.clientX;
+      physics.current.mouseY = e.clientY;
+    };
+
+    const update = () => {
+      const p = physics.current;
       if (!ballRef.current) return;
 
-      const { left, top, width, height } = ballRef.current.getBoundingClientRect();
-      const centerX = left + width / 2;
-      const centerY = top + height / 2;
+      const dx = p.x - p.mouseX;
+      const dy = p.y - p.mouseY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      const magnetRadius = 300;
+      const pushStrength = 1.2;
 
-      const deltaX = e.clientX - centerX;
-      const deltaY = e.clientY - centerY;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-      const magnetRadius = 250; // Aumentei o raio para as camadas externas
-      const strength = -60; // Força NEGATIVA para repulsão
-
-      if (distance < magnetRadius) {
-        // Calcula o deslocamento (repulsão: move-se na direção OPOSTA ao mouse)
-        const moveX = (deltaX / distance) * strength * (1 - distance / magnetRadius);
-        const moveY = (deltaY / distance) * strength * (1 - distance / magnetRadius);
-        setPosition({ x: moveX, y: moveY });
-      } else {
-        setPosition({ x: 0, y: 0 });
+      if (distance < magnetRadius && distance > 0) {
+        const force = (1 - distance / magnetRadius) * pushStrength;
+        p.vx += (dx / distance) * force;
+        p.vy += (dy / distance) * force;
       }
+
+      p.vx *= 0.97;
+      p.vy *= 0.97;
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      const margin = 40;
+      if (p.x < margin) { p.x = margin; p.vx *= -0.6; }
+      if (p.x > window.innerWidth - margin) { p.x = window.innerWidth - margin; p.vx *= -0.6; }
+      if (p.y < margin) { p.y = margin; p.vy *= -0.6; }
+      if (p.y > window.innerHeight - margin) { p.y = window.innerHeight - margin; p.vy *= -0.6; }
+
+      ballRef.current.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
+
+      requestAnimationFrame(update);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    const animationId = requestAnimationFrame(update);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationId);
+    };
   }, []);
 
   return (
-    <div className="Ball-container">
-      <div 
-        ref={ballRef}
-        className="Magnetic-Ball-System"
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px)`,
-        }}
-      >
-        {/* Camadas do Campo Magnético */}
-        <div className="Magnetic-Field layer-3"></div>
-        <div className="Magnetic-Field layer-2"></div>
-        <div className="Magnetic-Field layer-1"></div>
-        
-        {/* Bolinha Principal */}
-        <div className="Magnetic-Core"></div>
-      </div>
+    <div className="Magnetic-Ball-System global" ref={ballRef}>
+      <div className="Magnetic-Field layer-3"></div>
+      <div className="Magnetic-Field layer-2"></div>
+      <div className="Magnetic-Field layer-1"></div>
+      <div className="Magnetic-Core">YC</div>
     </div>
   );
 };

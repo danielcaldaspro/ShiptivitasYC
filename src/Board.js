@@ -26,10 +26,12 @@ export default class Board extends React.Component {
     const { clients } = this.state;
     const updatedClients = { ...clients };
     
-    ['backlog', 'inProgress', 'complete'].forEach(lane => {
-      updatedClients[lane] = updatedClients[lane].map(c => 
-        c.id === clientID ? { ...c, priority: newPriority } : c
-      ).sort((a, b) => b.priority - a.priority);
+    // Atualiza a prioridade do cliente em qualquer lane que ele esteja
+    const laneKeys = ['backlog', 'inProgress', 'complete'];
+    laneKeys.forEach(lane => {
+      updatedClients[lane] = updatedClients[lane]
+        .map(c => c.id === clientID ? { ...c, priority: newPriority } : c)
+        .sort((a, b) => b.priority - a.priority);
     });
 
     this.setState({ clients: updatedClients });
@@ -43,49 +45,34 @@ export default class Board extends React.Component {
     ]);
 
     this.drake.on('drop', (el, target, source, sibling) => {
-      this.drake.cancel(true); // Let React handle the DOM update
+      this.drake.cancel(true); // Deixa o React lidar com a atualização do DOM
 
       const clientID = el.dataset.id;
-      const targetLane = target.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase();
+      const targetLaneTitle = target.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase();
+      
       let newStatus = 'backlog';
-      if (targetLane === 'in progress') newStatus = 'in-progress';
-      else if (targetLane === 'complete') newStatus = 'complete';
+      if (targetLaneTitle === 'in progress') newStatus = 'in-progress';
+      else if (targetLaneTitle === 'complete') newStatus = 'complete';
 
-      // Find the client and move it
+      // Coleta todos os clientes atuais
       const allClients = [
         ...this.state.clients.backlog,
         ...this.state.clients.inProgress,
         ...this.state.clients.complete,
       ];
 
+      // Encontra o cliente movido e atualiza seu status
       const clientIndex = allClients.findIndex(c => c.id === clientID);
-      const client = { ...allClients[clientIndex], status: newStatus };
+      const movedClient = { ...allClients[clientIndex], status: newStatus };
       allClients.splice(clientIndex, 1);
+      allClients.push(movedClient); // Adiciona temporariamente para re-filtrar
 
-      // Determine the new index in the target lane
-      // Find the sibling's index if it exists
-      const targetClients = allClients.filter(c => c.status === newStatus);
-      let targetIndex = targetClients.length;
-      if (sibling) {
-        const siblingID = sibling.dataset.id;
-        targetIndex = targetClients.findIndex(c => c.id === siblingID);
-      }
-
-      // Update state
+      // Filtra os clientes por lane e ORDENA por prioridade imediatamente
       const updatedClients = {
-        backlog: allClients.filter(c => c.status === 'backlog'),
-        inProgress: allClients.filter(c => c.status === 'in-progress'),
-        complete: allClients.filter(c => c.status === 'complete'),
+        backlog: allClients.filter(c => c.status === 'backlog').sort((a, b) => b.priority - a.priority),
+        inProgress: allClients.filter(c => c.status === 'in-progress').sort((a, b) => b.priority - a.priority),
+        complete: allClients.filter(c => c.status === 'complete').sort((a, b) => b.priority - a.priority),
       };
-
-      // Add the moved client to the target lane at the correct index
-      const laneKey = newStatus === 'in-progress' ? 'inProgress' : newStatus;
-      updatedClients[laneKey].splice(targetIndex, 0, client);
-
-      // Re-sort all lanes by priority to ensure auto-sorting
-      ['backlog', 'inProgress', 'complete'].forEach(lane => {
-        updatedClients[lane].sort((a, b) => b.priority - a.priority);
-      });
 
       this.setState({
         clients: updatedClients

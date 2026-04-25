@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.css';
 import HomeTab from './HomeTab';
 import Navigation from './Navigation';
 import Board from './Board';
+import MagneticBall from './MagneticBall';
 import './App.css';
 
 class App extends Component {
@@ -40,6 +41,7 @@ class App extends Component {
         <div className="App-body">
           {this.renderTabContent()}
         </div>
+        <MagneticBall />
       </div>
     );
   }
