@@ -48,8 +48,8 @@ export default class Swimlane extends React.Component {
               <div className="Sort-menu">
                 <button onClick={() => this.handleSortClick('AZ')}>A-Z</button>
                 <button onClick={() => this.handleSortClick('ZA')}>Z-A</button>
-                <button onClick={() => this.handleSortClick('High')}>Maior Prioridade</button>
-                <button onClick={() => this.handleSortClick('Low')}>Menor Prioridade</button>
+                <button onClick={() => this.handleSortClick('High')}>Highest Priority</button>
+                <button onClick={() => this.handleSortClick('Low')}>Lowest Priority</button>
               </div>
             )}
           </div>
