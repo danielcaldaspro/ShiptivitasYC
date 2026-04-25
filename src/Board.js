@@ -14,14 +14,9 @@ export default class Board extends React.Component {
           ...client, 
           status: 'backlog', 
           priority: Math.floor(Math.random() * 5) + 1 
-        })), // Ordem inicial vinda da função getClients
+        })),
         inProgress: [],
         complete: [],
-      },
-      sortModes: {
-        backlog: 'manual',
-        inProgress: 'manual',
-        complete: 'manual'
       }
     }
     this.swimlanes = {
@@ -31,29 +26,28 @@ export default class Board extends React.Component {
     }
   }
 
-  // Só ordena quando o usuário CLICA no botão
-  toggleSortMode = (lane) => {
-    // Cicla entre: manual -> priority -> alphabetical -> manual
-    const currentMode = this.state.sortModes[lane];
-    let newMode = 'priority';
-    if (currentMode === 'priority') newMode = 'alphabetical';
-    else if (currentMode === 'alphabetical') newMode = 'priority';
-
+  handleSort = (lane, mode) => {
     this.setState(prevState => {
-      const updatedSortModes = { ...prevState.sortModes, [lane]: newMode };
       const updatedClients = { ...prevState.clients };
-      updatedClients[lane] = this.sortClients(updatedClients[lane], newMode);
-      return { sortModes: updatedSortModes, clients: updatedClients };
+      updatedClients[lane] = this.sortClients(updatedClients[lane], mode);
+      return { clients: updatedClients };
     });
   }
 
   sortClients = (clients, mode) => {
-    if (mode === 'priority') {
-      return [...clients].sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name));
-    } else if (mode === 'alphabetical') {
-      return [...clients].sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = [...clients];
+    switch (mode) {
+      case 'AZ':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'ZA':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case 'High':
+        return sorted.sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name));
+      case 'Low':
+        return sorted.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
+      default:
+        return sorted;
     }
-    return clients;
   }
 
   updatePriority = (clientID, newPriority) => {
@@ -87,7 +81,6 @@ export default class Board extends React.Component {
       if (targetLaneTitle.includes('in progress')) { newStatus = 'in-progress'; targetKey = 'inProgress'; }
       else if (targetLaneTitle.includes('complete')) { newStatus = 'complete'; targetKey = 'complete'; }
 
-      // 1. Remove o cliente da lane de origem
       const sourceKey = source.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase().includes('in progress') ? 'inProgress' : 
                         source.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase().includes('complete') ? 'complete' : 'backlog';
       
@@ -96,7 +89,6 @@ export default class Board extends React.Component {
       const [movedClient] = sourceClients.splice(clientIndex, 1);
       movedClient.status = newStatus;
 
-      // 2. Insere na lane de destino na posição correta
       const targetClients = sourceKey === targetKey ? sourceClients : [...this.state.clients[targetKey]];
       
       let insertIndex = targetClients.length;
@@ -105,17 +97,11 @@ export default class Board extends React.Component {
       }
       targetClients.splice(insertIndex, 0, movedClient);
 
-      // 3. Atualiza o estado respeitando a ordem manual
       this.setState(prevState => ({
         clients: {
           ...prevState.clients,
           [sourceKey]: sourceClients,
           [targetKey]: targetClients
-        },
-        // Ao arrastar manualmente, o modo de ordenação volta para 'manual'
-        sortModes: {
-          ...prevState.sortModes,
-          [targetKey]: 'manual'
         }
       }));
     });
@@ -162,8 +148,7 @@ export default class Board extends React.Component {
         clients={clients} 
         dragulaRef={ref}
         onPriorityChange={this.updatePriority}
-        sortMode={this.state.sortModes[laneKey]}
-        onToggleSort={() => this.toggleSortMode(laneKey)}
+        onSort={(mode) => this.handleSort(laneKey, mode)}
       />
     );
   }
