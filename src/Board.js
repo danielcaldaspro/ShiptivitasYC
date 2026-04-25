@@ -13,15 +13,15 @@ export default class Board extends React.Component {
         backlog: clients.map(client => ({ 
           ...client, 
           status: 'backlog', 
-          priority: Math.floor(Math.random() * 5) + 1 // Prioridade Aleatória
-        })).sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name)),
+          priority: Math.floor(Math.random() * 5) + 1 
+        })), // Ordem inicial vinda da função getClients
         inProgress: [],
         complete: [],
       },
       sortModes: {
-        backlog: 'priority',
-        inProgress: 'priority',
-        complete: 'priority'
+        backlog: 'manual',
+        inProgress: 'manual',
+        complete: 'manual'
       }
     }
     this.swimlanes = {
@@ -31,8 +31,14 @@ export default class Board extends React.Component {
     }
   }
 
+  // Só ordena quando o usuário CLICA no botão
   toggleSortMode = (lane) => {
-    const newMode = this.state.sortModes[lane] === 'priority' ? 'alphabetical' : 'priority';
+    // Cicla entre: manual -> priority -> alphabetical -> manual
+    const currentMode = this.state.sortModes[lane];
+    let newMode = 'priority';
+    if (currentMode === 'priority') newMode = 'alphabetical';
+    else if (currentMode === 'alphabetical') newMode = 'priority';
+
     this.setState(prevState => {
       const updatedSortModes = { ...prevState.sortModes, [lane]: newMode };
       const updatedClients = { ...prevState.clients };
@@ -44,19 +50,20 @@ export default class Board extends React.Component {
   sortClients = (clients, mode) => {
     if (mode === 'priority') {
       return [...clients].sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name));
+    } else if (mode === 'alphabetical') {
+      return [...clients].sort((a, b) => a.name.localeCompare(b.name));
     }
-    return [...clients].sort((a, b) => a.name.localeCompare(b.name));
+    return clients;
   }
 
   updatePriority = (clientID, newPriority) => {
-    const { clients, sortModes } = this.state;
+    const { clients } = this.state;
     const updatedClients = { ...clients };
     
     ['backlog', 'inProgress', 'complete'].forEach(lane => {
       updatedClients[lane] = updatedClients[lane].map(c => 
         c.id === clientID ? { ...c, priority: newPriority } : c
       );
-      updatedClients[lane] = this.sortClients(updatedClients[lane], sortModes[lane]);
     });
 
     this.setState({ clients: updatedClients });
@@ -76,28 +83,41 @@ export default class Board extends React.Component {
       const targetLaneTitle = target.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase();
       
       let newStatus = 'backlog';
-      let laneKey = 'backlog';
-      if (targetLaneTitle.includes('in progress')) { newStatus = 'in-progress'; laneKey = 'inProgress'; }
-      else if (targetLaneTitle.includes('complete')) { newStatus = 'complete'; laneKey = 'complete'; }
+      let targetKey = 'backlog';
+      if (targetLaneTitle.includes('in progress')) { newStatus = 'in-progress'; targetKey = 'inProgress'; }
+      else if (targetLaneTitle.includes('complete')) { newStatus = 'complete'; targetKey = 'complete'; }
 
-      const allClients = [
-        ...this.state.clients.backlog,
-        ...this.state.clients.inProgress,
-        ...this.state.clients.complete,
-      ];
+      // 1. Remove o cliente da lane de origem
+      const sourceKey = source.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase().includes('in progress') ? 'inProgress' : 
+                        source.parentElement.querySelector('.Swimlane-title').innerText.toLowerCase().includes('complete') ? 'complete' : 'backlog';
+      
+      const sourceClients = [...this.state.clients[sourceKey]];
+      const clientIndex = sourceClients.findIndex(c => c.id === clientID);
+      const [movedClient] = sourceClients.splice(clientIndex, 1);
+      movedClient.status = newStatus;
 
-      const clientIndex = allClients.findIndex(c => c.id === clientID);
-      const movedClient = { ...allClients[clientIndex], status: newStatus };
-      allClients.splice(clientIndex, 1);
-      allClients.push(movedClient);
+      // 2. Insere na lane de destino na posição correta
+      const targetClients = sourceKey === targetKey ? sourceClients : [...this.state.clients[targetKey]];
+      
+      let insertIndex = targetClients.length;
+      if (sibling) {
+        insertIndex = targetClients.findIndex(c => c.id === sibling.dataset.id);
+      }
+      targetClients.splice(insertIndex, 0, movedClient);
 
-      const updatedClients = {
-        backlog: this.sortClients(allClients.filter(c => c.status === 'backlog'), this.state.sortModes.backlog),
-        inProgress: this.sortClients(allClients.filter(c => c.status === 'in-progress'), this.state.sortModes.inProgress),
-        complete: this.sortClients(allClients.filter(c => c.status === 'complete'), this.state.sortModes.complete),
-      };
-
-      this.setState({ clients: updatedClients });
+      // 3. Atualiza o estado respeitando a ordem manual
+      this.setState(prevState => ({
+        clients: {
+          ...prevState.clients,
+          [sourceKey]: sourceClients,
+          [targetKey]: targetClients
+        },
+        // Ao arrastar manualmente, o modo de ordenação volta para 'manual'
+        sortModes: {
+          ...prevState.sortModes,
+          [targetKey]: 'manual'
+        }
+      }));
     });
   }
 

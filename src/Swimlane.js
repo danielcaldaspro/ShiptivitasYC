@@ -17,12 +17,17 @@ export default class Swimlane extends React.Component {
         />
       );
     })
+
+    let sortLabel = '⭐ Priority';
+    if (this.props.sortMode === 'priority') sortLabel = '🔠 A-Z';
+    else if (this.props.sortMode === 'alphabetical') sortLabel = '✋ Manual';
+
     return (
       <div className="Swimlane-column">
         <div className="Swimlane-header">
           <div className="Swimlane-title">{this.props.name}</div>
           <button className="Sort-toggle" onClick={this.props.onToggleSort}>
-            {this.props.sortMode === 'priority' ? '⭐ Priority' : '🔠 A-Z'}
+            {sortLabel}
           </button>
         </div>
         <div className="Swimlane-dragColumn" ref={this.props.dragulaRef}>
